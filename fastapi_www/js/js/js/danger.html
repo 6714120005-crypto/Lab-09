@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body onload="requireAuth()">
+<h2 style="color:red">Danger Zone</h2>
+<button onclick="deactivate()">Deactivate Account</button>
+
+<script src="js/api.js"></script>
+<script>
+    async function deactivate() {
+        if (!confirm("ARE YOU SURE?")) return;
+        await fetch(API_URL + "/users/me", {
+            method: "DELETE",
+            headers: authHeader()
+        });
+        logout();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>FastAPI Auth System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+<h1>🔐 FastAPI Auth System</h1>
+
+<!-- ===== NAV ===== -->
+<nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('login')">Login</button>
+    <button onclick="showPage('register')">Register</button>
+    <button onclick="showPage('tools')">Tools</button>
+</nav>
+
+<!-- ===== HOME ===== -->
+<section id="home" class="active">
+    <h2>🏠 Home</h2>
+    <p>ระบบทดสอบ Authentication ด้วย FastAPI</p>
+    <ul>
+        <li>JWT Authentication</li>
+        <li>Bcrypt Password Hash</li>
+        <li>Access / Refresh Token</li>
+    </ul>
+</section>
+
+<!-- ===== LOGIN ===== -->
+<section id="login">
+    <h2>🔑 Login</h2>
+    <input id="loginEmail" type="email" placeholder="Email"><br>
+    <input id="loginPassword" type="password" placeholder="Password"><br>
+    <button onclick="login()">Login</button>
+
+    <div class="response" id="loginResponse"></div>
+</section>
+
+<!-- ===== REGISTER ===== -->
+<section id="register">
+    <h2>📝 Register</h2>
+    <input id="regEmail" type="email" placeholder="Email"><br>
+    <input id="regUsername" placeholder="Username"><br>
+    <input id="regPassword" type="password" placeholder="Password"><br>
+    <button onclick="register()">Register</button>
+
+    <div class="response" id="registerResponse"></div>
+</section>
+
+<!-- ===== TOOLS ===== -->
+<section id="tools">
+    <h2>🛠 FastAPI Auth Tester</h2>
+
+    <button onclick="getProfile()">Get My Profile</button>
+    <button onclick="logout()">Logout</button>
+
+    <div class="response" id="toolsResponse"></div>
+</section>
+
+<script>
+    /* ======================
+       PAGE SWITCHING
+    ====================== */
+    function showPage(pageId) {
+        document.querySelectorAll("section").forEach(sec => {
+            sec.classList.remove("active");
+        });
+        document.getElementById(pageId).classList.add("active");
+    }
+
+    /* ======================
+       API CONFIG
+    ====================== */
+    const API_BASE = "http://localhost:8000";
+
+    function apiFetch(path, options = {}) {
+        return fetch(API_BASE + path, {
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            },
+            ...options
+        });
+    }
+
+    /* ======================
+       AUTH
+    ====================== */
+    function saveTokens(data) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+    }
+
+    function getAccessToken() {
+        return localStorage.getItem("access_token");
+    }
+
+    async function login() {
+        const email = loginEmail.value;
+        const password = loginPassword.value;
+
+        const res = await apiFetch("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        saveTokens(data);
+
+        loginResponse.innerText = JSON.stringify(data, null, 2);
+        showPage("tools");
+    }
+
+    async function register() {
+        const res = await apiFetch("/auth/register", {
+            method: "POST",
+            body: JSON.stringify({
+                email: regEmail.value,
+                username: regUsername.value,
+                password: regPassword.value
+            })
+        });
+
+        const data = await res.json();
+        registerResponse.innerText = JSON.stringify(data, null, 2);
+    }
+
+    /* ======================
+       TOOLS
+    ====================== */
+    async function getProfile() {
+        const res = await apiFetch("/users/me", {
+            headers: {
+                Authorization: "Bearer " + getAccessToken()
+            }
+        });
+
+        const data = await res.json();
+        toolsResponse.innerText = JSON.stringify(data, null, 2);
+    }
+
+    function logout() {
+        localStorage.clear();
+        toolsResponse.innerText = "✅ Logged out";
+        showPage("home");
+    }
+</script>
+
+</body>
+</html>
